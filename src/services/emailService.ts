@@ -5,10 +5,18 @@ let EMAILJS_SERVICE_ID = 'ton_service_id';
 let EMAILJS_TEMPLATE_ID = 'ton_template_id';
 let EMAILJS_PUBLIC_KEY = 'ton_public_key';
 
-// Initialiser EmailJS
-emailjs.init(EMAILJS_PUBLIC_KEY);
+// Note: EmailJS sera initialisé seulement quand une configuration valide sera fournie
 
 export const sendReceiptByEmail = async (receiptData: any, customerEmail: string) => {
+  // Vérifier si EmailJS est configuré avec des valeurs valides
+  if (EMAILJS_PUBLIC_KEY === 'ton_public_key' || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+    return {
+      success: false,
+      message: 'EmailJS n\'est pas configuré. Veuillez configurer EmailJS dans les paramètres.',
+      error: 'Configuration manquante'
+    };
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('mg-MG', {
       style: 'currency',
@@ -117,6 +125,7 @@ export const updateEmailJSConfig = (serviceId: string, templateId: string, publi
   EMAILJS_TEMPLATE_ID = templateId;
   EMAILJS_PUBLIC_KEY = publicKey;
   
+  // Initialiser EmailJS avec la nouvelle clé publique
   emailjs.init(publicKey);
   
   // Retourner les nouvelles valeurs pour validation
@@ -126,3 +135,12 @@ export const updateEmailJSConfig = (serviceId: string, templateId: string, publi
     publicKey: publicKey.substring(0, 8) + '...' // Masquer la clé pour la sécurité
   };
 };
+
+// Fonction pour récupérer la configuration actuelle
+export const getEmailJSConfig = () => {
+  return {
+    serviceId: EMAILJS_SERVICE_ID,
+    templateId: EMAILJS_TEMPLATE_ID,
+    publicKey: EMAILJS_PUBLIC_KEY
+  };
+}

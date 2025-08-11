@@ -939,7 +939,7 @@ export const SettingsInterface: React.FC = () => {
   );
 
   const renderEmailJSSettings = () => (
-    <EmailJSConfig />
+    <EmailJSConfig onClose={() => setActiveTab('general')} />
   );
   const renderDataSettings = () => (
     <DataResetManager />
