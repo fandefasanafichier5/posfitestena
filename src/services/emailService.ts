@@ -1,9 +1,9 @@
 import emailjs from '@emailjs/browser';
 
 // Configuration EmailJS
-const EMAILJS_SERVICE_ID = 'ton_service_id';
-const EMAILJS_TEMPLATE_ID = 'ton_template_id';
-const EMAILJS_PUBLIC_KEY = 'ton_public_key';
+let EMAILJS_SERVICE_ID = 'ton_service_id';
+let EMAILJS_TEMPLATE_ID = 'ton_template_id';
+let EMAILJS_PUBLIC_KEY = 'ton_public_key';
 
 // Initialiser EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
@@ -111,6 +111,12 @@ export const testEmailJSConfiguration = async () => {
 export const updateEmailJSConfig = (serviceId: string, templateId: string, publicKey: string) => {
   // Note: En production, ces valeurs devraient être dans des variables d'environnement
   console.log('🔧 Mise à jour de la configuration EmailJS');
+  
+  // Mettre à jour les variables de configuration
+  EMAILJS_SERVICE_ID = serviceId;
+  EMAILJS_TEMPLATE_ID = templateId;
+  EMAILJS_PUBLIC_KEY = publicKey;
+  
   emailjs.init(publicKey);
   
   // Retourner les nouvelles valeurs pour validation

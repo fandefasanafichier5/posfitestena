@@ -25,7 +25,8 @@ import {
   RefreshCw,
   LogOut,
   Info,
-  Lock
+  Lock,
+  Mail
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../services/authService';

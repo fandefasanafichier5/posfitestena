@@ -11,7 +11,10 @@ import {
   EyeOff,
   ExternalLink,
   Copy,
-  TestTube
+  TestTube,
+  FileText,
+  Key,
+  X
 } from 'lucide-react';
 import { updateEmailJSConfig, testEmailJSConfiguration } from '../../services/emailService';
 import toast from 'react-hot-toast';
@@ -210,11 +213,9 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
 
           {/* Actions */}
           <div className="flex justify-end gap-3">
-            {onClose && (
-              <Button variant="ghost" onClick={onClose}>
-                Fermer
-              </Button>
-            )}
+            <Button variant="ghost" onClick={onClose || (() => {})}>
+              Fermer
+            </Button>
             
             <Button 
               variant="outline"
