@@ -16,8 +16,8 @@ import {
   Key,
   X
 } from 'lucide-react';
-import { updateEmailJSConfig, testEmailJSConfiguration } from '../../services/emailService';
-import { getEmailJSConfig } from '../../services/emailService';
+import { updateEmailJSConfig, testEmailJSConfiguration, getEmailJSConfig, loadEmailJSConfig } from '../../services/emailService';
+import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
 interface EmailJSConfigProps {
@@ -34,42 +34,83 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
   const [isTesting, setIsTesting] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { user } = useAuthStore();
 
-  // Charger la configuration actuelle au montage du composant
+  // Charger la configuration depuis Firestore au montage du composant
   React.useEffect(() => {
-    const currentConfig = getEmailJSConfig();
-    setConfig({
-      serviceId: currentConfig.serviceId,
-      templateId: currentConfig.templateId,
-      publicKey: currentConfig.publicKey
-    });
+    const loadConfig = async () => {
+      if (!user?.establishmentId) return;
+      
+      setIsLoading(true);
+      try {
+        // Charger depuis Firestore
+        const loaded = await loadEmailJSConfig(user.establishmentId);
+        
+        // Récupérer la configuration actuelle (maintenant chargée depuis Firestore)
+        const currentConfig = getEmailJSConfig();
+        setConfig({
+          serviceId: currentConfig.serviceId,
+          templateId: currentConfig.templateId,
+          publicKey: currentConfig.publicKey
+        });
+        
+        // Vérifier si EmailJS est déjà configuré avec des valeurs valides
+        if (currentConfig.publicKey !== 'ton_public_key' && 
+            currentConfig.serviceId !== 'ton_service_id' && 
+            currentConfig.templateId !== 'ton_template_id') {
+          setIsConfigured(true);
+        }
+        
+        if (loaded) {
+          console.log('✅ Configuration EmailJS chargée depuis Firestore');
+        } else {
+          console.log('ℹ️ Aucune configuration EmailJS trouvée, utilisation des valeurs par défaut');
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de la configuration:', error);
+        toast.error('Erreur lors du chargement de la configuration EmailJS');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Vérifier si EmailJS est déjà configuré avec des valeurs valides
-    if (currentConfig.publicKey !== 'ton_public_key' && 
-        currentConfig.serviceId !== 'ton_service_id' && 
-        currentConfig.templateId !== 'ton_template_id') {
-      setIsConfigured(true);
+    if (user?.establishmentId) {
+      loadConfig();
     }
-  }, []);
+  }, [user?.establishmentId]);
 
   const handleConfigUpdate = () => {
+    if (!user?.establishmentId) {
+      toast.error('Établissement non trouvé');
+      return;
+    }
+    
     if (!config.serviceId || !config.templateId || !config.publicKey) {
       toast.error('Tous les champs sont requis');
       return;
     }
 
     setIsSaving(true);
-    try {
-      const result = updateEmailJSConfig(config.serviceId, config.templateId, config.publicKey);
+    
+    updateEmailJSConfig(user.establishmentId, config.serviceId, config.templateId, config.publicKey)
+    .then((result) => {
       setIsConfigured(true);
-      toast.success('Configuration EmailJS mise à jour avec succès');
+      if (result.saved) {
+        toast.success('Configuration EmailJS sauvegardée avec succès');
+      } else {
+        toast.success('Configuration EmailJS mise à jour (erreur de sauvegarde)');
+      }
       console.log('Configuration mise à jour:', result);
-    } catch (error) {
+    })
+    .catch((error) => {
       toast.error('Erreur lors de la mise à jour de la configuration');
       console.error('Erreur de configuration:', error);
-    } finally {
+    })
+    .finally(() => {
       setIsSaving(false);
-    }
+    });
   };
 
   const handleTestConfiguration = async () => {
@@ -109,7 +150,17 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
         </h2>
       </div>
 
-      <Card>
+      {isLoading && (
+        <Card>
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Chargement de la configuration...</p>
+          </div>
+        </Card>
+      )}
+
+      {!isLoading && (
+        <Card>
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-start">
@@ -121,6 +172,7 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
                 <p>2. Créez un service email (Gmail, Outlook, etc.)</p>
                 <p>3. Créez un template d'email pour les reçus</p>
                 <p>4. Copiez vos clés ci-dessous</p>
+                <p className="font-medium text-blue-800">✅ La configuration sera automatiquement sauvegardée</p>
               </div>
             </div>
           </div>
@@ -193,6 +245,7 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
           />
         </div>
       </Card>
+      )}
 
       <Card>
         {/* Template d'email suggéré */}
@@ -272,9 +325,10 @@ export const EmailJSConfig: React.FC<EmailJSConfigProps> = ({ onClose }) => {
             <div className="flex items-start">
               <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <h4 className="text-sm font-medium text-green-800">Configuration mise à jour</h4>
+                <h4 className="text-sm font-medium text-green-800">Configuration sauvegardée</h4>
                 <p className="text-sm text-green-700 mt-1">
-                  EmailJS est maintenant configuré. Vous pouvez tester l'envoi d'emails.
+                  EmailJS est maintenant configuré et sauvegardé. La configuration sera conservée après actualisation.
+                  Vous pouvez tester l'envoi d'emails.
                 </p>
               </div>
             </div>

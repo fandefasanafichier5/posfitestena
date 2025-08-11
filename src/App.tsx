@@ -20,6 +20,7 @@ import { SettingsInterface } from './components/settings/SettingsInterface';
 import { SubscriptionManagement } from './pages/SubscriptionManagement';
 import { PaymentValidationDashboard } from './components/admin/PaymentValidationDashboard';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { loadEmailJSConfig } from './services/emailService';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuthStore();
@@ -36,12 +37,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 function App() {
-  const { initialize } = useAuthStore();
+  const { initialize, user } = useAuthStore();
   const [isCashRegisterOpen, setIsCashRegisterOpen] = React.useState(false);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Charger la configuration EmailJS quand l'utilisateur se connecte
+  useEffect(() => {
+    const initEmailJS = async () => {
+      if (user?.establishmentId) {
+        await loadEmailJSConfig(user.establishmentId);
+      }
+    };
+    
+    if (user?.establishmentId) {
+      initEmailJS();
+    }
+  }, [user?.establishmentId]);
 
   return (
     <>

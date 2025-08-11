@@ -14,7 +14,8 @@ import {
   Phone
 } from 'lucide-react';
 import { formatAmountInWords } from '../../utils/numberToWords';
-import { sendReceiptByEmail } from '../../services/emailService';
+import { sendReceiptByEmail, loadEmailJSConfig } from '../../services/emailService';
+import { useAuthStore } from '../../store/authStore';
 
 interface ReceiptItem {
   name: string;
@@ -62,6 +63,19 @@ export const ReceiptGenerator: React.FC<ReceiptGeneratorProps> = ({
   const [customerEmail, setCustomerEmail] = React.useState(receiptData.customerEmail || '');
   const [showEmailForm, setShowEmailForm] = React.useState(false);
   const [isEmailSending, setIsEmailSending] = React.useState(false);
+  
+  const { user } = useAuthStore();
+
+  // Charger la configuration EmailJS au montage du composant
+  React.useEffect(() => {
+    const initEmailJS = async () => {
+      if (user?.establishmentId) {
+        await loadEmailJSConfig(user.establishmentId);
+      }
+    };
+    
+    initEmailJS();
+  }, [user?.establishmentId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('mg-MG', {
